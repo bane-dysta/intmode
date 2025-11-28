@@ -608,6 +608,8 @@ int main(int argc, char* argv[]) {
     std::cout << "\n" << std::string(100, '=') << "\n";
     std::cout << "Analysis complete!\n";
     std::cout << "Author: Bane Dysta\n";
+    std::cout << "Feedback: https://github.com/bane-dysta/intmode\n";
+    std::cout << "          http://bbs.keinsci.com/forum.php?mod=viewthread&tid=57134&fromuid=63020\n";
     std::cout << std::string(100, '=') << "\n\n";
     
     return 0;
