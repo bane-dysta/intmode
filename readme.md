@@ -51,7 +51,7 @@ $$\lambda_\alpha = \sum_{i=1}^{3N-6} c_{i\alpha} \cdot \lambda_i$$
 
 **归一化为百分比**：
 
-$$\text{Contribution}_\alpha(\%) = \frac{\lambda_\alpha}{\lambda_{\text{total}}} \times 100\% = \frac{\sum_i c_{i\alpha} \lambda_i}{\sum_i \lambda_i} \times 100\%$$
+$$\text{Contribution}_\alpha = \frac{\lambda_\alpha}{\lambda_{\text{total}}} \times 100\% = \frac{\sum_i c_{i\alpha} \lambda_i}{\sum_i \lambda_i} \times 100\%$$
 
 这样可以定量回答："键长变化贡献了多少重组能？键角变化贡献了多少？"
 
