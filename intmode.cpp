@@ -375,7 +375,7 @@ public:
             
             std::cout << "\n" << type << " (Bond Lengths/Angles/Dihedrals):\n";
             std::cout << std::setw(8) << "Coord"
-                      << std::setw(20) << "Definition"
+                      << std::setw(20) << "Definition "
                       << std::setw(15) << "Contribution(%)"
                       << "\n";
             std::cout << std::string(45, '-') << "\n";
@@ -453,6 +453,7 @@ public:
         
         // 保存到文件
         saveResults(coord_contributions, coord_definitions, type_totals);
+        saveLowFrequencyCoordinateFile();
     }
     
     void saveResults(const std::map<std::string, double>& coord_contributions,
@@ -555,6 +556,90 @@ public:
         std::cout << "Reorganization energy data saved to: " << output_file << "\n";
     }
     
+    void saveLowFrequencyCoordinateFile(double threshold = 208.5,
+                                        const std::string& output_file = "int_lowfreq.dat") {
+        if (coordinate_data_.empty()) {
+            std::cout << "Skipping low-frequency coordinate file: no coordinate data.\n";
+            return;
+        }
+
+        std::vector<bool> is_low(modes_.size(), false);
+        double total_lambda = 0.0;
+        int low_freq_mode_count = 0;
+
+        for (size_t i = 0; i < modes_.size(); ++i) {
+            if (modes_[i].frequency <= threshold) {
+                is_low[i] = true;
+                total_lambda += modes_[i].lambda;
+                if (modes_[i].lambda > 0.0) {
+                    low_freq_mode_count++;
+                }
+            }
+        }
+
+        if (total_lambda == 0.0) {
+            std::cout << "Skipping low-frequency coordinate file: total lambda below threshold is zero.\n";
+            return;
+        }
+
+        std::map<std::string, double> coord_contributions;
+        std::map<std::string, std::string> coord_definitions;
+
+        for (const auto& coord_mode : coordinate_data_) {
+            int mode_index = coord_mode.mode_number - 1;
+            if (mode_index < 0 || mode_index >= static_cast<int>(modes_.size())) {
+                continue;
+            }
+            if (!is_low[mode_index]) {
+                continue;
+            }
+
+            double lambda_i = modes_[mode_index].lambda;
+            if (lambda_i == 0.0) {
+                continue;
+            }
+
+            for (const auto& contrib : coord_mode.contributions) {
+                double ci = contrib.weight / 100.0;
+                double contribution = ci * lambda_i / total_lambda * 100.0;
+                coord_contributions[contrib.name] += contribution;
+                coord_definitions[contrib.name] = contrib.definition;
+            }
+        }
+
+        if (coord_contributions.empty()) {
+            std::cout << "Skipping low-frequency coordinate file: no contributions found under threshold.\n";
+            return;
+        }
+
+        std::vector<std::pair<std::string, double>> sorted_contribs(coord_contributions.begin(),
+                                                                    coord_contributions.end());
+        std::sort(sorted_contribs.begin(), sorted_contribs.end(),
+                  [](const auto& a, const auto& b) { return a.second > b.second; });
+
+        std::ofstream out(output_file);
+        if (!out.is_open()) {
+            std::cerr << "Error: Cannot create output file " << output_file << std::endl;
+            return;
+        }
+
+        out << "# Low-frequency Internal Coordinate Contributions\n";
+        out << "# Input file: " << filename_ << "\n";
+        out << "# Threshold: <= " << threshold << " cm-1\n";
+        out << "# Modes included: " << low_freq_mode_count << "\n";
+        out << "#\n";
+        out << "# Coordinate  Definition  Contribution(%)\n";
+
+        for (const auto& entry : sorted_contribs) {
+            out << std::setw(10) << entry.first << "  "
+                << std::setw(20) << coord_definitions[entry.first] << "  "
+                << std::setw(12) << std::fixed << std::setprecision(6) << entry.second << "\n";
+        }
+
+        out.close();
+        std::cout << "Low-frequency coordinate contributions saved to: " << output_file << "\n";
+    }
+
     bool hasCoordinateData() const {
         return !coordinate_data_.empty();
     }
